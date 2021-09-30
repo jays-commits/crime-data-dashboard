@@ -1,0 +1,8 @@
+rect:hover {
+  fill: orange;
+}
+li.nav-item {
+  display: inline-block;
+  float: none;
+  zoom: 1;
+}
