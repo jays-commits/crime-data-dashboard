@@ -104,6 +104,20 @@
                 Suspect Info
               </button>
             </li>
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link"
+                id="pills-location-tab"
+                data-bs-toggle="pill"
+                data-bs-target="#pills-location"
+                type="button"
+                role="tab"
+                aria-controls="pills-location"
+                aria-selected="false"
+              >
+                Location
+              </button>
+            </li>
           </ul>
 
           <div class="tab-content" id="pills-tabContent">
@@ -122,7 +136,9 @@
               role="tabpanel"
               aria-labelledby="pills-law-tab"
             >
-              ...
+              <h5 class="text-center">Crimes by law category</h5>
+              <div id="law-pie-container" class="pie-chart-container"></div>
+              <svg class="chart" id="law"></svg>
             </div>
             <div
               class="tab-pane fade"
@@ -130,7 +146,9 @@
               role="tabpanel"
               aria-labelledby="pills-offence-tab"
             >
-              ...
+              <h5 class="text-center">Crimes by offence category</h5>
+              <div id="offence-pie-container" class="pie-chart-container"></div>
+              <svg class="chart" id="offence"></svg>
             </div>
             <div
               class="tab-pane fade"
@@ -138,7 +156,35 @@
               role="tabpanel"
               aria-labelledby="pills-victim-tab"
             >
-              ...
+              <div class="container">
+                <div class="row text-center mb-5">
+                  <h5 class="mb-5">Victim Age</h5>
+                  <div class="col-md-6" id="bar-chart-small">
+                    <svg class="chart" id="victim-age"></svg>
+                  </div>
+                  <div class="col-md-6">
+                    <div id="victim-age-pie" class="pie-chart-small"></div>
+                  </div>
+                </div>
+                <div class="row text-center mb-5">
+                  <h5 class="mb-5">Victim Sex</h5>
+                  <div class="col-md-6" id="bar-chart-small">
+                    <svg class="chart" id="victim-sex"></svg>
+                  </div>
+                  <div class="col-md-6">
+                    <div id="victim-sex-pie" class="pie-chart-small"></div>
+                  </div>
+                </div>
+                <div class="row text-center mb-5">
+                  <h5 class="mb-5">Victim Race</h5>
+                  <div class="col-md-6" id="bar-chart-small">
+                    <svg class="chart" id="victim-race"></svg>
+                  </div>
+                  <div class="col-md-6">
+                    <div id="victim-race-pie" class="pie-chart-small"></div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div
               class="tab-pane fade"
@@ -146,7 +192,44 @@
               role="tabpanel"
               aria-labelledby="pills-suspect-tab"
             >
-              ...
+              <div class="container">
+                <div class="row text-center mb-5">
+                  <h5 class="mb-5">Suspect Age</h5>
+                  <div class="col-md-6" id="bar-chart-small">
+                    <svg class="chart" id="suspect-age"></svg>
+                  </div>
+                  <div class="col-md-6">
+                    <div id="suspect-age-pie" class="pie-chart-small"></div>
+                  </div>
+                </div>
+                <div class="row text-center mb-5">
+                  <h5 class="mb-5">Suspect Sex</h5>
+                  <div class="col-md-6" id="bar-chart-small">
+                    <svg class="chart" id="suspect-sex"></svg>
+                  </div>
+                  <div class="col-md-6">
+                    <div id="suspect-sex-pie" class="pie-chart-small"></div>
+                  </div>
+                </div>
+                <div class="row text-center mb-5">
+                  <h5 class="mb-5">Suspect Race</h5>
+                  <div class="col-md-6" id="bar-chart-small">
+                    <svg class="chart" id="suspect-race"></svg>
+                  </div>
+                  <div class="col-md-6">
+                    <div id="suspect-race-pie" class="pie-chart-small"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="tab-pane fade"
+              id="pills-location"
+              role="tabpanel"
+              aria-labelledby="pills-location-tab"
+            >
+              <h5 class="text-center">Crimes by NAD83 X-Y Coordinate System</h5>
+              <div id="scatterplot" style="width: 100%"></div>
             </div>
           </div>
         </div>
@@ -159,7 +242,10 @@
       integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ"
       crossorigin="anonymous"
     ></script>
-    <script src="js/d3.js"></script>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <!-- <script src="js/d3.js"></script> -->
+    <!-- <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script> -->
+    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
     <script src="js/index.js"></script>
   </body>
 </html>
