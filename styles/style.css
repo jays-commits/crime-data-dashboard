@@ -1,0 +1,50 @@
+html,
+body {
+  height: 100%;
+}
+
+.blocks-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+}
+.blocks-wrapper.left {
+  padding-left: 10px;
+}
+.blocks-wrapper.right {
+  padding-right: 10px;
+}
+
+.blocks-wrapper > div {
+  flex: 1;
+}
+.social-filter .btn-sm {
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+.filter-label {
+  font-size: 14px;
+  color: gray;
+  display: inline;
+  vertical-align: middle;
+}
+.crime-share-wrapper > div {
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  flex-direction: column;
+}
+.dashboard-card {
+  background-color: #363636;
+  border-radius: 8px;
+}
+#crimes-by-offense-chart,
+#crimes-by-law-chart {
+  height: 100%;
+}
+
+#leaflet-map {
+  /* border-radius: 8px; */
+  height: 100%;
+}
