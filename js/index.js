@@ -16,6 +16,11 @@ let state = {
   v_sex: "None",
 };
 
+// Initialize Hourly Crime data structure
+for (let i = 0; i < 24; i++) {
+  crime_hourly_data[i] = 0;
+}
+
 // SECTION Start
 window.onload = function () {
   init();
@@ -23,9 +28,10 @@ window.onload = function () {
 // Global init function
 function init() {
   loadData().then((result) => {
-    dataset = result;
+    dataset = getSampleSizeN(result, result.length / 2);
+    // dataset = result;
     preprocess();
-    initMap();
+    // initMap();
   });
 }
 
@@ -44,7 +50,7 @@ function preprocess() {
   document.getElementById("crime_share").innerHTML = crime_share + "%";
 
   filtered.forEach((row) => {
-    // Update Crimes by Law Category
+    // Process Crimes by Law Category
     if (row.LAW_CAT_CD == "FELONY") {
       law_data["Felony"] += 1;
     } else if (row.LAW_CAT_CD == "MISDEMEANOR") {
@@ -53,11 +59,18 @@ function preprocess() {
       law_data["Violation"] += 1;
     }
 
-    // Update Top Crime Locations
+    // Process Top Crime Locations
     if (row.PREM_TYP_DESC in location_data) {
       location_data[row.PREM_TYP_DESC] += 1;
     } else {
       location_data[row.PREM_TYP_DESC] = 0;
+    }
+
+    // Process Crime rate by hours
+    if (row.CMPLNT_FR_TM in crime_hourly_data) {
+      crime_hourly_data[row.CMPLNT_FR_TM] += 1;
+    } else {
+      crime_hourly_data[row.CMPLNT_FR_TM] = 0;
     }
   });
   updateCrimesByLawChart(law_data);
@@ -69,6 +82,8 @@ function preprocess() {
       return second[1] - first[1];
     });
   updateCrimesBylocationChart(top_location_data.slice(0, 4));
+  updateCrimesByHourChart(crime_hourly_data);
+  updateCrimesOnMap(filtered);
 }
 
 // Loading the data in a JS Promise
@@ -120,8 +135,30 @@ function resetFilters() {
     Violation: 0,
   };
   location_data = {};
-  crime_hourly_data = {};
+  for (let i = 0; i < 24; i++) {
+    crime_hourly_data[i] = 0;
+  }
 }
+
+// NOTE Crimes on a map
+const locationMap = {
+  margin: {},
+  width: 0,
+  height: 0,
+  svg: {},
+  x: {},
+  xAxis: {},
+  y: {},
+  yAxis: {},
+};
+locationMap.margin = { top: 10, right: 5, bottom: 20, left: 23 };
+locationMap.width =
+  document.getElementById("leaflet-map").clientWidth -
+  locationMap.margin.left -
+  locationMap.margin.right;
+locationMap.height =
+  document.getElementById("leaflet-map").clientHeight -
+  (locationMap.margin.top + locationMap.margin.bottom);
 
 // NOTE Crimes by Offence Category SVG
 const locationChart = {
@@ -166,6 +203,59 @@ lawChart.height =
   lawChart.margin.top -
   lawChart.margin.bottom;
 
+// NOTE Crime rate by hours SVG
+const hourlyChart = {
+  margin: {},
+  width: 0,
+  height: 0,
+  svg: {},
+  x: {},
+  xAxis: {},
+  y: {},
+  yAxis: {},
+};
+
+hourlyChart.margin = { top: 10, right: 5, bottom: 20, left: 23 };
+hourlyChart.width =
+  document.getElementById("crimes-by-hour-chart").clientWidth -
+  hourlyChart.margin.left -
+  hourlyChart.margin.right;
+hourlyChart.height =
+  document.getElementById("crimes-by-hour-chart").clientHeight -
+  hourlyChart.margin.top -
+  hourlyChart.margin.bottom;
+
+// Create the SVG object for Hourly Chart
+hourlyChart.svg = d3
+  .select("#crimes-by-hour-chart")
+  .append("svg")
+  .attr(
+    "width",
+    hourlyChart.width + hourlyChart.margin.left + hourlyChart.margin.right
+  )
+  .attr(
+    "height",
+    hourlyChart.height + hourlyChart.margin.top + hourlyChart.margin.bottom
+  )
+  .append("g")
+  .attr(
+    "transform",
+    `translate(${hourlyChart.margin.left},${hourlyChart.margin.top})`
+  );
+
+// Create X axis
+hourlyChart.x = d3.scaleLinear().range([0, hourlyChart.width]);
+hourlyChart.xAxis = hourlyChart.svg
+  .append("g")
+  .attr("transform", `translate(0,${hourlyChart.height})`);
+
+//Create Y axis
+hourlyChart.y = d3.scaleLinear().range([hourlyChart.height, 0]);
+hourlyChart.yAxis = hourlyChart.svg
+  .append("g")
+  .attr("class", "yAxis")
+  .style("font-size", "9px");
+
 // Create the SVG object for Location Chart
 locationChart.svg = d3
   .select("#crimes-by-location-chart")
@@ -200,6 +290,82 @@ locationChart.yAxis = locationChart.svg
   .style("font-size", "9px");
 
 // Update
+function updateCrimesByHourChart(filteredData) {
+  let data = [];
+  for (let key in filteredData) {
+    data.push({ attr: parseInt(key), value: filteredData[key] });
+  }
+
+  // data = data.slice(8).concat(data.slice(0, 8));
+  // X axis
+  hourlyChart.x.domain([
+    0,
+    d3.max(data, (d) => {
+      return d.attr;
+    }),
+  ]);
+  hourlyChart.xAxis.call(d3.axisBottom(hourlyChart.x).scale(hourlyChart.x));
+
+  // Y axis
+  hourlyChart.y.domain([0, d3.max(data, (d) => +d.value)]);
+  hourlyChart.yAxis.call(
+    d3.axisLeft(hourlyChart.y).tickSize(1).scale(hourlyChart.y)
+  );
+
+  // Create a update selection: bind to the new data
+  const u = hourlyChart.svg.selectAll(".lineTest").data([data], function (d) {
+    return d.attr;
+  });
+
+  // Update the line
+  u.join("path")
+    .attr("class", "lineTest")
+    .attr("stroke-width", 1.5)
+    .attr("stroke", "#C9BEFF")
+    .transition()
+    .duration(1000)
+    .attr(
+      "d",
+      d3
+        .area()
+        // .curve(d3.curveCatmullRom)
+        .curve(d3.curveMonotoneX)
+        .x(function (d) {
+          return hourlyChart.x(d.attr);
+        })
+        .y0(hourlyChart.y(0))
+        .y1(function (d) {
+          return hourlyChart.y(d.value);
+        })
+    )
+    .attr("fill", "url(#line-gradient)")
+    .attr("stroke", "#7259FF")
+    .attr("stroke-width", 1.5);
+
+  hourlyChart.svg
+    .append("linearGradient")
+    .attr("id", "line-gradient")
+    .attr("gradientUnits", "userSpaceOnUse")
+    .attr("x1", 0)
+    .attr("y1", hourlyChart.y(0))
+    .attr("x2", 0)
+    .attr("y2", hourlyChart.y(d3.max(data, (d) => +d.value)))
+    .selectAll("stop")
+    .data([
+      { offset: "10%", color: "rgba(114, 89, 255, 0)" },
+      { offset: "100%", color: "#7259FF" },
+    ])
+    .enter()
+    .append("stop")
+    .attr("offset", function (d) {
+      return d.offset;
+    })
+    .attr("stop-color", function (d) {
+      return d.color;
+    });
+}
+
+// Update
 function updateCrimesBylocationChart(filteredData) {
   let data = filteredData.map((entry) => {
     return { attr: entry[0], value: entry[1] };
@@ -213,21 +379,18 @@ function updateCrimesBylocationChart(filteredData) {
 
   // Y axis
   locationChart.y.domain([0, d3.max(data, (d) => +d.value)]);
-  locationChart.yAxis
-    .transition()
-    .duration(1000)
-    .call(
-      d3
-        .axisLeft(locationChart.y)
-        .scale(locationChart.y)
-        .tickSize(1)
-        .tickFormat(function (d) {
-          if (d / 1000 >= 1) {
-            d = d / 1000 + "K";
-          }
-          return d;
-        })
-    );
+  locationChart.yAxis.call(
+    d3
+      .axisLeft(locationChart.y)
+      .scale(locationChart.y)
+      .tickSize(1)
+      .tickFormat(function (d) {
+        if (d / 1000 >= 1) {
+          d = d / 1000 + "K";
+        }
+        return d;
+      })
+  );
 
   const k = locationChart.svg.selectAll("rect").data(data);
   k.join("rect")
@@ -277,13 +440,13 @@ function updateCrimesByLawChart(filteredData) {
   }
   // X axis
   lawChart.x.domain(data.map((d) => d.attr));
-  lawChart.xAxis.transition().duration(1000).call(d3.axisBottom(lawChart.x));
+  lawChart.xAxis.call(d3.axisBottom(lawChart.x));
 
   // Y axis
   lawChart.y.domain([0, d3.max(data, (d) => +d.value)]);
   lawChart.yAxis
-    .transition()
-    .duration(1000)
+    // .transition()
+    // .duration(1000)
     .call(
       d3
         .axisLeft(lawChart.y)
@@ -307,4 +470,119 @@ function updateCrimesByLawChart(filteredData) {
     .attr("y", (d) => lawChart.y(d.value))
     .attr("height", (d) => lawChart.height - lawChart.y(d.value))
     .attr("fill", "#7259FF");
+}
+
+// NOTE Create the SVG object for Location Map
+locationMap.svg = d3
+  .select("#leaflet-map")
+  .append("svg")
+  .attr(
+    "width",
+    locationMap.width + locationMap.margin.left + locationMap.margin.right
+  )
+  .attr(
+    "height",
+    locationMap.height + locationMap.margin.top + locationMap.margin.bottom
+  )
+  .append("g")
+  .attr(
+    "transform",
+    `translate(${locationMap.margin.left},${locationMap.margin.top})`
+  );
+
+// Create X axis
+locationMap.x = d3.scaleLinear().range([0, locationMap.width]);
+locationMap.xAxis = locationMap.svg
+  .append("g")
+  .attr("transform", `translate(0,${locationMap.height})`);
+
+//Create Y axis
+locationMap.y = d3.scaleLinear().range([locationMap.height, 0]);
+locationMap.yAxis = locationMap.svg
+  .append("g")
+  .attr("class", "yAxis")
+  .style("font-size", "9px");
+
+locationMap.svg.call(
+  d3
+    .brush() // Add the brush feature using the d3.brush function
+    .extent([
+      [0, 0],
+      [locationMap.width, locationMap.height],
+    ]) // initialise the brush area: start at 0,0 and finishes at width,height: it means I select the whole graph area
+    .on("start brush", updateMap) // Each time the brush selection changes, trigger the 'updateChart' function
+);
+
+function updateMap() {
+  // extent = d3.event.selection;
+  // myCircle.classed("selected", function(d){ return isBrushed(extent, x(d.Sepal_Length), y(d.Petal_Length) ) } )
+}
+
+function updateCrimesOnMap(filteredData) {
+  // let data = getSampleSizeN(filteredData, filteredData.length / 2);
+  let data = filteredData;
+  locationMap.x.domain([979216, 1008513]);
+  locationMap.xAxis
+    .transition()
+    .duration(1000)
+    .call(
+      d3
+        .axisBottom(locationMap.x)
+        .scale(locationMap.x)
+        .tickSize(1)
+        .tickFormat(function (d) {
+          if (d / 10000 >= 1) {
+            d = d / 10000 + "K";
+          }
+          return d;
+        })
+    );
+
+  // Y axis
+  locationMap.y.domain([194845, 257172]);
+  locationMap.yAxis
+    .transition()
+    .duration(1000)
+    .call(
+      d3
+        .axisLeft(locationMap.y)
+        .scale(locationMap.y)
+        .tickSize(1)
+        .tickFormat(function (d) {
+          if (d / 10000 >= 1) {
+            d = d / 10000 + "K";
+          }
+          return d;
+        })
+    );
+
+  locationMap.svg.selectAll("circle").remove();
+  locationMap.svg
+    .selectAll("circle")
+    .data(data)
+    .enter()
+    .append("circle")
+    .attr("cx", function (d) {
+      return locationMap.x(d.X_COORD_CD);
+    })
+    .attr("cy", function (d) {
+      return locationMap.y(d.Y_COORD_CD);
+    })
+    .style("fill", "#01FA91")
+    .style("opacity", "0.3")
+    .attr("r", 2);
+}
+
+function getSampleSizeN(arr, n) {
+  var shuffled = arr.slice(0),
+    i = arr.length,
+    temp,
+    index;
+  while (i--) {
+    index = Math.floor((i + 1) * Math.random());
+    temp = shuffled[index];
+    shuffled[index] = shuffled[i];
+    shuffled[i] = temp;
+  }
+  return shuffled.slice(0, n);
 }

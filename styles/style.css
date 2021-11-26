@@ -51,6 +51,12 @@ body {
 #crimes-by-law-chart {
   height: 100%;
 }
+#leaflet-map {
+  height: 100%;
+}
+#crimes-by-hour-chart {
+  height: 100%;
+}
 .text-green {
   color: #01fa91;
 }
