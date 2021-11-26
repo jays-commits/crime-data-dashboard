@@ -1,0 +1,35 @@
+{
+  "name": "nypd-crime-visualized",
+  "version": "1.0.0",
+  "description": "Data visualization dashboard",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "dependencies": {
+    "fast-csv": "^4.3.6"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "node js/processing.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/janarosmonaliev/nypd-crime-visualized.git"
+  },
+  "keywords": [
+    "data",
+    "visualization",
+    "new",
+    "york",
+    "crime",
+    "data",
+    "map"
+  ],
+  "author": "Zhanarbek Osmnaliev",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/janarosmonaliev/nypd-crime-visualized/issues"
+  },
+  "homepage": "https://github.com/janarosmonaliev/nypd-crime-visualized#readme"
+}

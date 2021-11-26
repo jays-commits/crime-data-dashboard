@@ -3,6 +3,10 @@ body {
   height: 100%;
 }
 
+.container-fluid {
+  background-color: #13192f;
+}
+
 .blocks-wrapper {
   display: flex;
   flex-direction: column;
@@ -36,12 +40,65 @@ body {
   flex-direction: column;
 }
 .dashboard-card {
-  background-color: #363636;
+  background-color: #1e2742;
   border-radius: 8px;
 }
-#crimes-by-offense-chart,
+
+#crimes-by-location-chart {
+  height: 100%;
+}
+
 #crimes-by-law-chart {
   height: 100%;
+}
+.text-green {
+  color: #01fa91;
+}
+.text-purple {
+  color: #7259ff;
+}
+
+.btn-check:checked + .btn-outline-success {
+  color: #1e2742;
+  background-color: #01fa91;
+  border-color: #01fa91;
+}
+.btn-outline-success {
+  color: #01fa91;
+  border-color: #01fa91;
+}
+.btn-outline-success:hover {
+  color: #1e2742;
+  border-color: #01fa91;
+  background-color: #01fa91;
+}
+.btn-check:checked + .btn-outline-danger {
+  color: #f0f0f0;
+  background-color: #f34943;
+  border-color: #f34943;
+}
+.btn-outline-danger {
+  color: #f34943;
+  border-color: #f34943;
+}
+.btn-outline-danger:hover {
+  color: #1e2742;
+  border-color: #f34943;
+  background-color: #f34943;
+}
+.btn-check:checked + .btn-outline-primary {
+  color: #1e2742;
+  background-color: #2bf3fa;
+  border-color: #2bf3fa;
+}
+.btn-outline-primary {
+  color: #2bf3fa;
+  border-color: #2bf3fa;
+}
+.btn-outline-primary:hover {
+  color: #1e2742;
+  border-color: #2bf3fa;
+  background-color: #2bf3fa;
 }
 
 #leaflet-map {
