@@ -1,5 +1,8 @@
 # Submission Files
 *.zip
+*.mov
+**.mov
+.mov
 
 # Logs
 logs
