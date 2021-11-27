@@ -7,6 +7,7 @@ let law_data = {
 };
 let location_data = {};
 let crime_hourly_data = {};
+let crime_victim_race = {};
 let crime_share = 100;
 
 let state = {
@@ -30,15 +31,15 @@ function init() {
   loadData().then((result) => {
     dataset = getSampleSizeN(result, result.length / 2);
     // dataset = result;
-    preprocess();
+    preprocess(dataset);
     // initMap();
   });
 }
 
 // SECTION Pre-processing
-function preprocess() {
+function preprocess(new_dataset, updateMap = true) {
   resetFilters();
-  filtered = dataset.filter(
+  filtered = new_dataset.filter(
     (row) =>
       (state.s_age != "None" ? row.SUSP_AGE_GROUP == state.s_age : row) &&
       (state.s_sex != "None" ? row.SUSP_SEX == state.s_sex : row) &&
@@ -72,6 +73,14 @@ function preprocess() {
     } else {
       crime_hourly_data[row.CMPLNT_FR_TM] = 0;
     }
+
+    // Process Crime Victim Race
+
+    if (row.VIC_RACE in crime_victim_race) {
+      crime_victim_race[row.VIC_RACE] += 1;
+    } else {
+      crime_victim_race[row.VIC_RACE] = 0;
+    }
   });
   updateCrimesByLawChart(law_data);
   let top_location_data = Object.keys(location_data)
@@ -83,7 +92,11 @@ function preprocess() {
     });
   updateCrimesBylocationChart(top_location_data.slice(0, 4));
   updateCrimesByHourChart(crime_hourly_data);
-  updateCrimesOnMap(filtered);
+  // FIXME
+  updateCrimesByVictimRace(crime_victim_race);
+  if (updateMap == true) {
+    updateCrimesOnMap(filtered);
+  }
 }
 
 // Loading the data in a JS Promise
@@ -114,19 +127,19 @@ function initMap() {
 
 function updateSuspectAge(value) {
   state.s_age = value;
-  preprocess();
+  preprocess(dataset);
 }
 function updateVictimAge(value) {
   state.v_age = value;
-  preprocess();
+  preprocess(dataset);
 }
 function updateSuspectSex(value) {
   state.s_sex = value;
-  preprocess();
+  preprocess(dataset);
 }
 function updateVictimSex(value) {
   state.v_sex = value;
-  preprocess();
+  preprocess(dataset);
 }
 function resetFilters() {
   law_data = {
@@ -140,6 +153,28 @@ function resetFilters() {
   }
 }
 
+// NOTE Crimes by Offence Category SVG
+const raceTreemap = {
+  margin: {},
+  width: 0,
+  height: 0,
+  svg: {},
+  x: {},
+  xAxis: {},
+  y: {},
+  yAxis: {},
+  root: {},
+};
+
+raceTreemap.margin = { top: 10, right: 5, bottom: 20, left: 23 };
+raceTreemap.width =
+  document.getElementById("race-treemap").clientWidth -
+  raceTreemap.margin.left -
+  raceTreemap.margin.right;
+raceTreemap.height =
+  document.getElementById("race-treemap").clientHeight -
+  (raceTreemap.margin.top + raceTreemap.margin.bottom);
+
 // NOTE Crimes on a map
 const locationMap = {
   margin: {},
@@ -150,6 +185,9 @@ const locationMap = {
   xAxis: {},
   y: {},
   yAxis: {},
+  dots: {},
+  brushedDots: {},
+  selected: true,
 };
 locationMap.margin = { top: 10, right: 5, bottom: 20, left: 23 };
 locationMap.width =
@@ -256,7 +294,25 @@ hourlyChart.yAxis = hourlyChart.svg
   .attr("class", "yAxis")
   .style("font-size", "9px");
 
-// Create the SVG object for Location Chart
+// FIXME Create the SVG object for Race Treemap
+raceTreemap.svg = d3
+  .select("#race-treemap")
+  .append("svg")
+  .attr(
+    "width",
+    raceTreemap.width + raceTreemap.margin.left + raceTreemap.margin.right
+  )
+  .attr(
+    "height",
+    raceTreemap.height + raceTreemap.margin.top + raceTreemap.margin.bottom
+  )
+  .append("g")
+  .attr(
+    "transform",
+    `translate(${raceTreemap.margin.left},${raceTreemap.margin.top})`
+  );
+
+// NOTE Create the SVG object for Location Chart
 locationChart.svg = d3
   .select("#crimes-by-location-chart")
   .append("svg")
@@ -432,6 +488,74 @@ lawChart.yAxis = lawChart.svg
   .attr("class", "yAxis")
   .style("font-size", "9px");
 
+// FIXME
+function updateCrimesByVictimRace(filteredData) {
+  let data = [];
+  for (let key in filteredData) {
+    data.push({ attr: key, value: filteredData[key], parent: "Race" });
+  }
+  var line = d3.csvParse(`attr,value,parent
+Race,,
+`);
+  data.unshift(line[0]);
+
+  raceTreemap.root = d3
+    .stratify()
+    .id(function (d) {
+      return d.attr;
+    })
+    .parentId(function (d) {
+      return d.parent;
+    })(data);
+
+  raceTreemap.root.sum((d) => {
+    return +d.value;
+  });
+
+  d3.treemap().size([raceTreemap.width, raceTreemap.height]).padding(1)(
+    raceTreemap.root
+  );
+
+  // raceTreemap.svg.selectAll("*").remove();
+
+  raceTreemap.svg
+    .selectAll("rect")
+    .data(raceTreemap.root.leaves())
+    .join("rect")
+    .attr("x", function (d) {
+      return d.x0;
+    })
+    .attr("y", function (d) {
+      return d.y0;
+    })
+    .attr("width", function (d) {
+      return d.x1 - d.x0;
+    })
+    .attr("height", function (d) {
+      return d.y1 - d.y0;
+    })
+    .style("fill", "#f34943");
+
+  // and to add the text labels
+  raceTreemap.svg
+    .selectAll("text")
+    .data(raceTreemap.root.leaves())
+    .join("text")
+    .attr("x", function (d) {
+      return d.x0 + 10;
+    })
+    .attr("y", function (d) {
+      return d.y0 + 20;
+    })
+    .text(function (d) {
+      return d.data.attr;
+    })
+    .attr("font-size", "9px")
+    .style("text-transform", "lowercase")
+    // .style("transform", "rotate(90deg)")
+    .attr("fill", "white");
+}
+
 // Update
 function updateCrimesByLawChart(filteredData) {
   let data = [];
@@ -505,17 +629,51 @@ locationMap.yAxis = locationMap.svg
 
 locationMap.svg.call(
   d3
-    .brush() // Add the brush feature using the d3.brush function
+    .brush()
     .extent([
       [0, 0],
       [locationMap.width, locationMap.height],
-    ]) // initialise the brush area: start at 0,0 and finishes at width,height: it means I select the whole graph area
-    .on("start brush", updateMap) // Each time the brush selection changes, trigger the 'updateChart' function
+    ])
+    .on("brush start", (event, d) => {
+      updateMap(event);
+    })
+    .on("end", updateMapBrushing)
 );
 
-function updateMap() {
-  // extent = d3.event.selection;
-  // myCircle.classed("selected", function(d){ return isBrushed(extent, x(d.Sepal_Length), y(d.Petal_Length) ) } )
+// FIXME
+function updateMapBrushing() {
+  if (locationMap.brushedDots.data().length > 0) {
+    preprocess(locationMap.brushedDots.data(), false);
+  } else {
+    preprocess(dataset);
+  }
+}
+
+function updateMap(e) {
+  locationMap.dots.attr("class", "dot-not-selected");
+
+  if (e.selection != null) {
+    locationMap.selected = true;
+    const extent = e.selection;
+
+    locationMap.brushedDots = locationMap.dots
+      .filter((d) => {
+        return isBrushed(
+          extent,
+          locationMap.x(d.X_COORD_CD),
+          locationMap.y(d.Y_COORD_CD)
+        );
+      })
+      .attr("class", "dot-selected");
+  }
+}
+
+function isBrushed(location, cx, cy) {
+  var x0 = location[0][0],
+    x1 = location[1][0],
+    y0 = location[0][1],
+    y1 = location[1][1];
+  return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1;
 }
 
 function updateCrimesOnMap(filteredData) {
@@ -557,7 +715,8 @@ function updateCrimesOnMap(filteredData) {
     );
 
   locationMap.svg.selectAll("circle").remove();
-  locationMap.svg
+  locationMap.dots = locationMap.svg
+    .append("g")
     .selectAll("circle")
     .data(data)
     .enter()

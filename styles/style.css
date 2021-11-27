@@ -57,6 +57,10 @@ body {
 #crimes-by-hour-chart {
   height: 100%;
 }
+#race-treemap {
+  height: 100%;
+  /* overflow: hidden; */
+}
 .text-green {
   color: #01fa91;
 }
@@ -106,7 +110,10 @@ body {
   border-color: #2bf3fa;
   background-color: #2bf3fa;
 }
-
+.dot-selected {
+  fill: #f34943 !important;
+  opacity: 1 !important;
+}
 #leaflet-map {
   /* border-radius: 8px; */
   height: 100%;
