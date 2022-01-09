@@ -92,8 +92,6 @@ function preprocess(new_dataset, updateMap = true) {
     });
   updateCrimesBylocationChart(top_location_data.slice(0, 4));
   updateCrimesByHourChart(crime_hourly_data);
-  // FIXME
-  updateCrimesByVictimRace(crime_victim_race);
   if (updateMap == true) {
     updateCrimesOnMap(filtered);
   }
@@ -153,28 +151,6 @@ function resetFilters() {
   }
 }
 
-// NOTE Crimes by Offence Category SVG
-const raceTreemap = {
-  margin: {},
-  width: 0,
-  height: 0,
-  svg: {},
-  x: {},
-  xAxis: {},
-  y: {},
-  yAxis: {},
-  root: {},
-};
-
-raceTreemap.margin = { top: 10, right: 5, bottom: 20, left: 23 };
-raceTreemap.width =
-  document.getElementById("race-treemap").clientWidth -
-  raceTreemap.margin.left -
-  raceTreemap.margin.right;
-raceTreemap.height =
-  document.getElementById("race-treemap").clientHeight -
-  (raceTreemap.margin.top + raceTreemap.margin.bottom);
-
 // NOTE Crimes on a map
 const locationMap = {
   margin: {},
@@ -196,7 +172,8 @@ locationMap.width =
   locationMap.margin.right;
 locationMap.height =
   document.getElementById("leaflet-map").clientHeight -
-  (locationMap.margin.top + locationMap.margin.bottom);
+  (locationMap.margin.top + locationMap.margin.bottom) -
+  20;
 
 // NOTE Crimes by Offence Category SVG
 const locationChart = {
@@ -293,24 +270,6 @@ hourlyChart.yAxis = hourlyChart.svg
   .append("g")
   .attr("class", "yAxis")
   .style("font-size", "9px");
-
-// FIXME Create the SVG object for Race Treemap
-raceTreemap.svg = d3
-  .select("#race-treemap")
-  .append("svg")
-  .attr(
-    "width",
-    raceTreemap.width + raceTreemap.margin.left + raceTreemap.margin.right
-  )
-  .attr(
-    "height",
-    raceTreemap.height + raceTreemap.margin.top + raceTreemap.margin.bottom
-  )
-  .append("g")
-  .attr(
-    "transform",
-    `translate(${raceTreemap.margin.left},${raceTreemap.margin.top})`
-  );
 
 // NOTE Create the SVG object for Location Chart
 locationChart.svg = d3
@@ -487,74 +446,6 @@ lawChart.yAxis = lawChart.svg
   .append("g")
   .attr("class", "yAxis")
   .style("font-size", "9px");
-
-// FIXME
-function updateCrimesByVictimRace(filteredData) {
-  let data = [];
-  for (let key in filteredData) {
-    data.push({ attr: key, value: filteredData[key], parent: "Race" });
-  }
-  var line = d3.csvParse(`attr,value,parent
-Race,,
-`);
-  data.unshift(line[0]);
-
-  raceTreemap.root = d3
-    .stratify()
-    .id(function (d) {
-      return d.attr;
-    })
-    .parentId(function (d) {
-      return d.parent;
-    })(data);
-
-  raceTreemap.root.sum((d) => {
-    return +d.value;
-  });
-
-  d3.treemap().size([raceTreemap.width, raceTreemap.height]).padding(1)(
-    raceTreemap.root
-  );
-
-  // raceTreemap.svg.selectAll("*").remove();
-
-  raceTreemap.svg
-    .selectAll("rect")
-    .data(raceTreemap.root.leaves())
-    .join("rect")
-    .attr("x", function (d) {
-      return d.x0;
-    })
-    .attr("y", function (d) {
-      return d.y0;
-    })
-    .attr("width", function (d) {
-      return d.x1 - d.x0;
-    })
-    .attr("height", function (d) {
-      return d.y1 - d.y0;
-    })
-    .style("fill", "#f34943");
-
-  // and to add the text labels
-  raceTreemap.svg
-    .selectAll("text")
-    .data(raceTreemap.root.leaves())
-    .join("text")
-    .attr("x", function (d) {
-      return d.x0 + 10;
-    })
-    .attr("y", function (d) {
-      return d.y0 + 20;
-    })
-    .text(function (d) {
-      return d.data.attr;
-    })
-    .attr("font-size", "9px")
-    .style("text-transform", "lowercase")
-    // .style("transform", "rotate(90deg)")
-    .attr("fill", "white");
-}
 
 // Update
 function updateCrimesByLawChart(filteredData) {
