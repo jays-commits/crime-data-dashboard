@@ -48,7 +48,7 @@ function preprocess(new_dataset, updateMap = true) {
   );
   // Update Crime Share
   crime_share = parseInt((filtered.length / dataset.length) * 100);
-  document.getElementById("crime_share").innerHTML = crime_share + "%";
+  document.getElementById("crime_total_share").innerHTML = crime_share + "%";
 
   filtered.forEach((row) => {
     // Process Crimes by Law Category
@@ -110,7 +110,7 @@ function initMap() {
   const accessToken =
     "pk.eyJ1IjoiamFuYXJvc21vbmFsaWV2IiwiYSI6ImNra2lkZmFqMzAzbzEydnM2ZWpjamJ5MnMifQ.0njPGy4UD3K-ZDq3M7e9ZA";
 
-  var map = L.map("leaflet-map").setView([40.73, -73.99], 12.5);
+  var map = L.map("crime_map").setView([40.73, -73.99], 12.5);
 
   L.tileLayer(
     "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=" +
@@ -167,13 +167,12 @@ const locationMap = {
 };
 locationMap.margin = { top: 10, right: 5, bottom: 20, left: 23 };
 locationMap.width =
-  document.getElementById("leaflet-map").clientWidth -
+  document.getElementById("crime_map").clientWidth -
   locationMap.margin.left -
   locationMap.margin.right;
 locationMap.height =
-  document.getElementById("leaflet-map").clientHeight -
-  (locationMap.margin.top + locationMap.margin.bottom) -
-  20;
+  document.getElementById("crime_map").clientHeight -
+  (locationMap.margin.top + locationMap.margin.bottom);
 
 // NOTE Crimes by Offence Category SVG
 const locationChart = {
@@ -230,7 +229,7 @@ const hourlyChart = {
   yAxis: {},
 };
 
-hourlyChart.margin = { top: 10, right: 5, bottom: 20, left: 23 };
+hourlyChart.margin = { top: 10, right: 5, bottom: 45, left: 23 };
 hourlyChart.width =
   document.getElementById("crimes-by-hour-chart").clientWidth -
   hourlyChart.margin.left -
@@ -489,7 +488,7 @@ function updateCrimesByLawChart(filteredData) {
 
 // NOTE Create the SVG object for Location Map
 locationMap.svg = d3
-  .select("#leaflet-map")
+  .select("#crime_map")
   .append("svg")
   .attr(
     "width",
